@@ -19,7 +19,13 @@ apt-get update
 apt-get install -y --no-install-recommends $(grep -vE '^\s*#|^\s*$' /tmp/packages.txt)
 
 echo "====> Install sendspin"
-pip install --no-cache-dir --break-system-packages sendspin
+# PyPI has no armv7l wheels for numpy/pillow; piwheels does, which avoids
+# compiling them under QEMU for the 32-bit image
+PIP_EXTRA=()
+if [ "$(dpkg --print-architecture)" = "armhf" ]; then
+    PIP_EXTRA=(--extra-index-url https://www.piwheels.org/simple)
+fi
+pip install --no-cache-dir --break-system-packages "${PIP_EXTRA[@]}" sendspin
 
 echo "====> Enable sendspin service"
 systemctl enable sendspin.service
