@@ -108,6 +108,7 @@ echo "==> Mirror card_skeleton/ onto the rootfs"
 rsync -a --no-owner --no-group "${SCRIPT_DIR}/card_skeleton/" "${ROOTFS}/"
 
 install -m 644 "${SCRIPT_DIR}/config/packages.txt" "${ROOTFS}/tmp/packages.txt"
+install -m 644 "${SCRIPT_DIR}/config/packages-armhf.txt" "${ROOTFS}/tmp/packages-armhf.txt"
 install -m 644 "${SCRIPT_DIR}/config/build-deps.txt" "${ROOTFS}/tmp/build-deps.txt"
 install -m 755 "${SCRIPT_DIR}/config/setup-chroot.sh" "${ROOTFS}/tmp/setup-chroot.sh"
 
