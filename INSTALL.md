@@ -65,7 +65,7 @@ dependencies, and `doas`):
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
     openssh-server chrony \
-    alsa-utils libasound2 \
+    alsa-utils libasound2t64 \
     python3 python3-pip python3-venv \
     gcc python3-dev build-essential libopenblas-dev gfortran \
     libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev \
