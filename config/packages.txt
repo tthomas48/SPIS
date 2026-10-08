@@ -2,7 +2,7 @@ openssh-server
 chrony
 
 alsa-utils
-libasound2
+libasound2t64
 
 python3
 python3-pip

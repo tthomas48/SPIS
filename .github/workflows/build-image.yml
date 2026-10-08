@@ -12,9 +12,21 @@ permissions:
 
 jobs:
   build:
-    name: Build image
-    # Native arm64 runner: avoids QEMU CPU emulation entirely for the chroot
-    runs-on: ubuntu-24.04-arm
+    name: Build image (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Native arm64 runner: avoids QEMU CPU emulation entirely for the chroot
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            qemu: false
+          # GitHub's arm64 runners can't execute 32-bit ARM code, so the armhf
+          # chroot runs under QEMU user emulation on an x86 runner instead
+          - arch: armhf
+            runner: ubuntu-24.04
+            qemu: true
 
     steps:
       - name: ↩️ Checkout
@@ -34,20 +46,41 @@ jobs:
             curl \
             xz-utils
 
+      - name: 🧩 Set up QEMU
+        if: matrix.qemu
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm
+
       - name: ⚙️ Build image
         run: sudo -E ./build.sh
+        env:
+          RASPIOS_ARCH: ${{ matrix.arch }}
 
       - name: ⤴️ Upload build artifact
         uses: actions/upload-artifact@v7
         with:
-          name: spis-image
+          name: spis-image-${{ matrix.arch }}
           path: |
             dist/*.img.xz
             dist/*-CREDENTIALS.txt
             dist/version-info
 
+  release:
+    name: Create GitHub release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: ⤵️ Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: spis-image-*
+          path: dist
+          merge-multiple: true
+
       - name: 🚀 Create GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
           append_body: true

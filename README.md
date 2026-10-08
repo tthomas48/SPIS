@@ -11,12 +11,18 @@ A minimal Raspberry Pi OS Lite image for Raspberry Pi that runs [SendSpin](https
 - **Optional USB DAC support** - Switch to a USB audio device via `/etc/asound.conf` if you want higher-quality output
 - **Auto-start service** - SendSpin starts automatically on boot in headless mode via systemd
 - **Low latency** - Direct ALSA hardware access for minimal audio buffering
-- **Raspberry Pi optimized** - Built specifically for Pi 3/4 hardware
+- **Raspberry Pi optimized** - Built specifically for Pi 2/3/4 hardware
 
 ## Supported Hardware
 
-- Raspberry Pi 3 Model B / B+
-- Raspberry Pi 4 Model B
+| Board                       | Image   |
+| --------------------------- | ------- |
+| Raspberry Pi 2 Model B      | `armhf` |
+| Raspberry Pi 3 Model B / B+ | `arm64` |
+| Raspberry Pi 4 Model B      | `arm64` |
+
+The `armhf` (32-bit) image also boots on the Pi 3 and 4, but `arm64` is preferred there.
+A Pi 2 v1.1 cannot run 64-bit code: flashing the `arm64` image makes the green LED blink 7 times (kernel not found).
 
 ## Quick Start
 
@@ -24,14 +30,14 @@ A minimal Raspberry Pi OS Lite image for Raspberry Pi that runs [SendSpin](https
 
 Download the latest image from [Releases](https://github.com/Poeschl/SPIS/releases)
 
-Look out for the `*.img.xz` files. The `*.CREDENTIALS.txt` files contains the initial root password.
+Look out for the `*.img.xz` files, picking `arm64` or `armhf` for your board (see [Supported Hardware](#supported-hardware)). The `*-CREDENTIALS.txt` files contain the initial root password.
 
 ### Flash to SD Card
 
 #### Linux / MacOS
 
 ```bash
-dd if=spis-0.1.0-aarch64.img of=/dev/sdX bs=4M status=progress
+dd if=SPIS-0.1.0-arm64.img of=/dev/sdX bs=4M status=progress
 sync
 ```
 
@@ -97,11 +103,14 @@ By default, the system uses the onboard 3.5mm headphone jack (ALSA card `Headpho
 
 ### Automated Build (GitHub Actions)
 
-Every tagged push (`v*`) triggers `.github/workflows/build-image.yml`, which builds a ready-to-flash image and publishes it as a GitHub Release:
+Every tagged push (`x.y.z`) triggers `.github/workflows/build-image.yml`, which builds a ready-to-flash image per architecture and publishes them as a GitHub Release:
 
-- `spis-<version>-aarch64.img.xz` - the flashable image
-- `spis-<version>-aarch64-CREDENTIALS.txt` - the random root password generated for that build (you'll be forced to change it on first login)
-- `version-info` - build version metadata
+- `SPIS-<version>-<arch>.img.xz` - the flashable image (`arm64` or `armhf`)
+- `SPIS-<version>-<arch>-CREDENTIALS.txt` - the random root password generated for that build (you'll be forced to change it on first login)
+
+The `arm64` image builds natively on an arm64 runner. The `armhf` image builds on an x86 runner under QEMU user emulation, since GitHub's arm64 runners can't execute 32-bit ARM code.
+
+To build locally, run `sudo ./build.sh` for `arm64` or `sudo RASPIOS_ARCH=armhf ./build.sh` for `armhf` (on a non-ARM host this needs `qemu-user-static` and `binfmt-support`).
 
 ### Manual Installation
 
