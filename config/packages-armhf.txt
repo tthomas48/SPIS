@@ -1,0 +1,7 @@
+# --- armhf (32-bit) only --- #
+# PyPI has no armv7l wheels for numpy/pillow, and piwheels' builds link against
+# system libraries (OpenBLAS, image codecs) that the build-deps purge removes.
+# Debian's packages pull in and keep their runtime libraries, and satisfy
+# sendspin's requirements so pip leaves them alone.
+python3-numpy
+python3-pil

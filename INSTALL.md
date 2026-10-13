@@ -10,7 +10,7 @@ hand, replicating exactly what `build.sh` / `config/setup-chroot.sh` automate in
 
 ## Prerequisites
 
-- Raspberry Pi 3 or 4
+- Raspberry Pi 2, 3 or 4
 - MicroSD card (8GB minimum, 16GB recommended)
 - USB Audio DAC (optional, onboard headphone jack works out of the box)
 - Network connection (Ethernet recommended)
@@ -19,13 +19,14 @@ hand, replicating exactly what `build.sh` / `config/setup-chroot.sh` automate in
 ## Step 1: Download Raspberry Pi OS Lite
 
 1. Visit https://www.raspberrypi.com/software/operating-systems/
-2. Download **Raspberry Pi OS Lite (64-bit)** (`raspios_lite_arm64`)
+2. Download **Raspberry Pi OS Lite (64-bit)** (`raspios_lite_arm64`) for a Pi 3 or 4, or
+   **Raspberry Pi OS Lite (32-bit)** (`raspios_lite_armhf`) for a Pi 2
 3. Or use [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to flash it directly to the SD card
 
 ## Step 2: Flash the Image
 
 **Using Raspberry Pi Imager (recommended, all platforms):**
-1. Select "Raspberry Pi OS Lite (64-bit)" as the OS
+1. Select "Raspberry Pi OS Lite (64-bit)" as the OS ("Raspberry Pi OS Lite (32-bit)" on a Pi 2)
 2. Select your SD card
 3. In the settings (gear icon), enable SSH and set a username/password if you want first-boot access already configured
 4. Write the image
@@ -64,7 +65,7 @@ dependencies, and `doas`):
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
     openssh-server chrony \
-    alsa-utils libasound2 \
+    alsa-utils libasound2t64 \
     python3 python3-pip python3-venv \
     gcc python3-dev build-essential libopenblas-dev gfortran \
     libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev \
@@ -80,6 +81,9 @@ sudo pip install --no-cache-dir --break-system-packages sendspin
 ```
 
 This will take 10-20 minutes on a Raspberry Pi 3 as it compiles numpy and other packages.
+
+On 32-bit Raspberry Pi OS (Pi 2), add `--extra-index-url https://www.piwheels.org/simple`
+so numpy and pillow install as prebuilt wheels instead of compiling on the Pi.
 
 **Note:** The `--break-system-packages` flag is needed because Debian/RaspiOS marks the
 system Python as externally managed (PEP 668). This is safe for a dedicated appliance.

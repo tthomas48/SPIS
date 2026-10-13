@@ -13,13 +13,36 @@ set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
+ARCH="$(dpkg --print-architecture)"
+
+# Lists the packages in a package list file, skipping comments and blank lines
+list_packages() {
+    grep -vE '^\s*#|^\s*$' "$1"
+}
+
+# ldd output for every compiled module pip installed
+pip_module_ldd() {
+    find /usr/local/lib/python3*/dist-packages -name '*.so*' -type f -print0 \
+        | xargs -0 -r ldd 2>/dev/null || true
+}
+
 echo "====> Install packages"
 apt-get update
 # shellcheck disable=SC2046
-apt-get install -y --no-install-recommends $(grep -vE '^\s*#|^\s*$' /tmp/packages.txt)
+apt-get install -y --no-install-recommends $(list_packages /tmp/packages.txt)
+if [ "${ARCH}" = "armhf" ]; then
+    # shellcheck disable=SC2046
+    apt-get install -y --no-install-recommends $(list_packages /tmp/packages-armhf.txt)
+fi
 
 echo "====> Install sendspin"
-pip install --no-cache-dir --break-system-packages sendspin
+# piwheels has armv7l wheels for the remaining compiled deps (cffi, propcache),
+# which avoids compiling them under QEMU for the 32-bit image
+PIP_EXTRA=()
+if [ "${ARCH}" = "armhf" ]; then
+    PIP_EXTRA=(--extra-index-url https://www.piwheels.org/simple)
+fi
+pip install --no-cache-dir --break-system-packages "${PIP_EXTRA[@]}" sendspin
 
 echo "====> Enable sendspin service"
 systemctl enable sendspin.service
@@ -70,12 +93,22 @@ echo "====> Cleanup"
 # Remove build-deps.txt packages
 if [ "${SLIM_BUILD}" = "true" ]; then
     # shellcheck disable=SC2046
-    apt-get purge -y $(grep -vE '^\s*#|^\s*$' /tmp/build-deps.txt) || true
+    apt-get purge -y $(list_packages /tmp/build-deps.txt) || true
     apt-get autoremove -y || true
+fi
+
+echo "====> Check pip modules still find their shared libraries"
+# Wheels that link against system libraries (rather than bundling them) break
+# at import time if the purge above removed one
+MISSING_LIBS="$(pip_module_ldd | grep 'not found' | sort -u || true)"
+if [ -n "${MISSING_LIBS}" ]; then
+    echo "Missing shared libraries for pip-installed modules:" >&2
+    echo "${MISSING_LIBS}" >&2
+    exit 1
 fi
 
 # Don't leave build-only state behind in the shipped image
 apt-get clean
 rm -rf /var/lib/apt/lists/*
-rm -f /tmp/packages.txt /tmp/build-deps.txt /build.env
+rm -f /tmp/packages.txt /tmp/packages-armhf.txt /tmp/build-deps.txt /build.env
 rm -f /build.sh

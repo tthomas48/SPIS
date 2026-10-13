@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 # build.sh
 #
-# Builds a flashable SPIS SD card image for Raspberry Pi 3/4, fully
+# Builds a flashable SPIS SD card image for Raspberry Pi, fully
 # automated (no interactive raspi-config/Imager customization wizard).
 #
-# Starts from the official Raspberry Pi OS Lite (arm64) base image and
-# customizes it via chroot.
+# Starts from the official Raspberry Pi OS Lite base image and customizes it
+# via chroot. RASPIOS_ARCH picks the base image:
+#   arm64 (default) - Pi 3/4
+#   armhf           - Pi 2/3/4 (32-bit)
 #
 # Requires root + losetup, parted, e2fsprogs (resize2fs/e2fsck), zerofree,
-# rsync, curl, xz.
+# rsync, curl, xz. Building armhf on a host that can't run 32-bit ARM code
+# also needs qemu-user-static + binfmt-support for the chroot.
 #
-# Usage: sudo ./build.sh [output-name-without-extension]
+# Usage: sudo [RASPIOS_ARCH=armhf] ./build.sh [output-name-without-extension]
 
 set -euo pipefail
 #set -x
@@ -105,6 +108,7 @@ echo "==> Mirror card_skeleton/ onto the rootfs"
 rsync -a --no-owner --no-group "${SCRIPT_DIR}/card_skeleton/" "${ROOTFS}/"
 
 install -m 644 "${SCRIPT_DIR}/config/packages.txt" "${ROOTFS}/tmp/packages.txt"
+install -m 644 "${SCRIPT_DIR}/config/packages-armhf.txt" "${ROOTFS}/tmp/packages-armhf.txt"
 install -m 644 "${SCRIPT_DIR}/config/build-deps.txt" "${ROOTFS}/tmp/build-deps.txt"
 install -m 755 "${SCRIPT_DIR}/config/setup-chroot.sh" "${ROOTFS}/tmp/setup-chroot.sh"
 
